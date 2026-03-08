@@ -6,21 +6,21 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint . --ext .ts,.tsx",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "next": "14.2.35",
+    "@vercel/kv": "^3.0.0",
+    "next": "15.5.12",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "@vercel/kv": "^3.0.0"
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "typescript": "^5.8.2",
     "@types/node": "^20.17.30",
     "@types/react": "^18.3.20",
     "@types/react-dom": "^18.3.5",
     "eslint": "^8.57.1",
-    "eslint-config-next": "14.2.35"
+    "eslint-config-next": "15.5.12",
+    "typescript": "^5.8.2"
   }
 }
