@@ -1,0 +1,41 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #0d0d0d;
+  font-family: 'Barlow Condensed', sans-serif;
+  color: #fff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+button {
+  padding: 11px 36px;
+  background: transparent;
+  border: 2px solid #e8a020;
+  color: #e8a020;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1em;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  transition: all 0.2s;
+}
+
+button:hover {
+  background: #e8a02022;
+  box-shadow: 0 0 16px #e8a02044;
+}
+
+@keyframes pulse {
+  from { opacity: 0.6; }
+  to { opacity: 1; }
+}
