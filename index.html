@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neon Dig — Quattro Constructors</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;600&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d0d0d; font-family:'Barlow Condensed',sans-serif; color:#fff; overflow:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; }
+  #header { text-align:center; margin-bottom:6px; }
+  #logo-q { font-size:1.8em; font-weight:900; color:#fff; letter-spacing:-1px; }
+  #logo-q span { color:#e8a020; }
+  #tagline { font-size:0.6em; color:#e8a020; letter-spacing:3px; text-transform:uppercase; font-weight:600; }
+  #game-title { font-size:1em; color:#ffffff55; letter-spacing:4px; text-transform:uppercase; }
+  #hud { display:flex; gap:14px; margin-bottom:6px; }
+  .hud-item { text-align:center; background:#ffffff08; border:1px solid #ffffff15; padding:4px 12px; border-radius:3px; }
+  .hud-label { color:#888; font-size:0.6em; letter-spacing:2px; text-transform:uppercase; }
+  .hud-val { font-size:1.3em; font-weight:700; }
+  #score-val { color:#e8a020; text-shadow:0 0 8px #e8a02088; }
+  #time-val { color:#ff4444; text-shadow:0 0 8px #ff444488; }
+  #hi-val { color:#aaffaa; text-shadow:0 0 8px #aaffaa66; }
+  #carried-wrap { display:flex; align-items:center; gap:6px; justify-content:center; min-width:80px; }
+  #carried-icon { font-size:1.1em; line-height:1; }
+  #carried-name { font-size:1em; font-weight:700; }
+  canvas { border:1px solid #ffffff15; display:block; }
+  #legend { display:flex; gap:12px; margin-top:5px; font-size:0.6em; }
+  .leg { display:flex; align-items:center; gap:4px; }
+  .leg-swatch { width:14px; height:14px; border-radius:3px; display:flex; align-items:center; justify-content:center; font-size:10px; flex-shrink:0; }
+  #controls-hint { font-size:0.55em; color:#444; margin-top:3px; letter-spacing:1px; }
+  #overlay { position:fixed; top:0; left:0; width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(0,0,0,0.92); z-index:10; }
+  .ov-logo { font-size:2.6em; font-weight:900; color:#fff; }
+  .ov-logo span { color:#e8a020; }
+  .ov-tagline { font-size:0.7em; color:#e8a020; letter-spacing:4px; text-transform:uppercase; margin-bottom:6px; }
+  .ov-gamename { font-size:1.3em; color:#ffffff55; letter-spacing:6px; text-transform:uppercase; margin-bottom:12px; }
+  .ov-divider { width:200px; height:1px; background:linear-gradient(90deg,transparent,#e8a020,transparent); margin:8px 0 14px; }
+  .ov-instructions { color:#aaa; font-size:0.78em; line-height:1.9; text-align:center; font-family:'Barlow',sans-serif; }
+  .ov-instructions strong { color:#fff; }
+  .ov-mats { display:flex; gap:16px; margin:12px 0; }
+  .ov-mat { display:flex; align-items:center; gap:5px; font-size:0.8em; font-weight:700; }
+  .ov-mat-swatch { width:20px; height:20px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:13px; }
+  .final-score { font-size:2.8em; font-weight:900; color:#e8a020; text-shadow:0 0 20px #e8a02066; margin:8px 0 2px; }
+  .final-label { font-size:0.7em; color:#888; letter-spacing:3px; text-transform:uppercase; margin-bottom:4px; }
+  .hi-row { font-size:0.8em; color:#aaffaa; letter-spacing:2px; margin-bottom:10px; }
+  .hi-row span { font-weight:700; }
+  button { margin-top:14px; padding:11px 36px; background:transparent; border:2px solid #e8a020; color:#e8a020; font-family:'Barlow Condensed',sans-serif; font-size:1em; font-weight:700; cursor:pointer; letter-spacing:3px; text-transform:uppercase; transition:all 0.2s; }
+  button:hover { background:#e8a02022; box-shadow:0 0 16px #e8a02044; }
+  .ov-footer { font-size:0.55em; color:#444; margin-top:14px; letter-spacing:2px; }
+  .new-hi { color:#aaffaa; font-size:0.85em; letter-spacing:2px; animation: pulse 0.6s infinite alternate; }
+  @keyframes pulse { from{opacity:0.6} to{opacity:1} }
+</style>
+</head>
+<body>
+<div id="header">
+  <div id="logo-q">QUATTRO <span>CONSTRUCTORS</span></div>
+  <div id="tagline">Partnering for Success</div>
+  <div id="game-title">⚙ Neon Dig ⚙</div>
+</div>
+<div id="hud">
+  <div class="hud-item"><div class="hud-label">Score</div><div class="hud-val" id="score-val">0</div></div>
+  <div class="hud-item"><div class="hud-label">Best</div><div class="hud-val" id="hi-val">—</div></div>
+  <div class="hud-item"><div class="hud-label">Time Left</div><div class="hud-val" id="time-val">60</div></div>
+  <div class="hud-item">
+    <div class="hud-label">Carrying</div>
+    <div id="carried-wrap"><span id="carried-icon">—</span><span id="carried-name"></span></div>
+  </div>
+</div>
+<canvas id="c"></canvas>
+<div id="legend">
+  <div class="leg"><div class="leg-swatch" id="ls-pipe"></div><span style="color:#00bfff">Water Pipe</span></div>
+  <div class="leg"><div class="leg-swatch" id="ls-cable"></div><span style="color:#ff8800">Cable</span></div>
+  <div class="leg"><div class="leg-swatch" id="ls-rebar"></div><span style="color:#ff3355">Rebar</span></div>
+  <div class="leg"><div class="leg-swatch" id="ls-concrete"></div><span style="color:#44ff88">Concrete</span></div>
+  <div class="leg"><div class="leg-swatch" style="background:#2a2a2a;border:1px solid #555">🪨</div><span style="color:#888">Rock</span></div>
+</div>
+<div id="controls-hint">↑ ↓ ← → or W A S D &nbsp;|&nbsp; Swipe on mobile</div>
+
+<div id="overlay">
+  <div class="ov-logo">QUATTRO <span>CONSTRUCTORS</span></div>
+  <div class="ov-tagline">Partnering for Success</div>
+  <div class="ov-gamename">⚙ Neon Dig ⚙</div>
+  <div class="ov-divider"></div>
+  <div class="ov-instructions">
+    Drive your excavator underground to uncover buried materials<br>
+    and deliver them to the <strong>matching glowing zones</strong> above.<br>
+    Deeper finds score <strong>bigger bonuses</strong>. Rocks block your path!
+  </div>
+  <div class="ov-mats" id="ov-mats-row"></div>
+  <button id="start-btn">START SHIFT</button>
+  <div class="ov-footer">Vancouver, BC · quattroconstructors.com</div>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const COLS=22,ROWS=18,TS=32;
+canvas.width=COLS*TS; canvas.height=ROWS*TS;
+
+const EMPTY=0,DIRT=1,ROCK=2,PIPE=3,CABLE=4,REBAR=5,CONCRETE=6,ZONE=7;
+const MAT_COLORS={[PIPE]:'#00bfff',[CABLE]:'#ff8800',[REBAR]:'#ff3355',[CONCRETE]:'#44ff88'};
+const MAT_NAMES={[PIPE]:'PIPE',[CABLE]:'CABLE',[REBAR]:'REBAR',[CONCRETE]:'CONCR'};
+const MATS=[PIPE,CABLE,REBAR,CONCRETE];
+
+function drawMatIcon(c2d, mat, x, y, size, alpha=1){
+  c2d.save();
+  c2d.globalAlpha=alpha;
+  const cx=x+size/2, cy=y+size/2, col=MAT_COLORS[mat];
+  c2d.strokeStyle=col; c2d.fillStyle=col; c2d.lineWidth=size*0.1;
+  if(mat===PIPE){
+    c2d.beginPath(); c2d.arc(cx,cy,size*0.38,0,Math.PI*2);
+    c2d.strokeStyle=col; c2d.lineWidth=size*0.12; c2d.stroke();
+    c2d.beginPath(); c2d.arc(cx,cy,size*0.14,0,Math.PI*2);
+    c2d.fillStyle=col+'88'; c2d.fill();
+    c2d.strokeStyle=col+'66'; c2d.lineWidth=size*0.07;
+    c2d.beginPath(); c2d.moveTo(x+size*0.15,cy-size*0.32); c2d.lineTo(x+size*0.85,cy-size*0.32); c2d.stroke();
+    c2d.beginPath(); c2d.moveTo(x+size*0.15,cy+size*0.32); c2d.lineTo(x+size*0.85,cy+size*0.32); c2d.stroke();
+  } else if(mat===CABLE){
+    c2d.beginPath();
+    c2d.moveTo(cx+size*0.1, y+size*0.1);
+    c2d.lineTo(cx-size*0.08, cy-size*0.02);
+    c2d.lineTo(cx+size*0.06, cy);
+    c2d.lineTo(cx-size*0.12, y+size*0.9);
+    c2d.lineWidth=size*0.13; c2d.strokeStyle=col;
+    c2d.lineJoin='round'; c2d.lineCap='round'; c2d.stroke();
+    c2d.beginPath(); c2d.arc(cx+size*0.1,y+size*0.12,size*0.07,0,Math.PI*2);
+    c2d.fillStyle=col; c2d.fill();
+  } else if(mat===REBAR){
+    c2d.lineWidth=size*0.1; c2d.strokeStyle=col; c2d.lineCap='round';
+    c2d.beginPath(); c2d.moveTo(x+size*0.15,y+size*0.15); c2d.lineTo(x+size*0.85,y+size*0.85); c2d.stroke();
+    c2d.beginPath(); c2d.moveTo(x+size*0.85,y+size*0.15); c2d.lineTo(x+size*0.15,y+size*0.85); c2d.stroke();
+    [[0.15,0.15],[0.85,0.85],[0.85,0.15],[0.15,0.85]].forEach(([rx,ry])=>{
+      c2d.beginPath(); c2d.arc(x+size*rx,y+size*ry,size*0.1,0,Math.PI*2);
+      c2d.fillStyle=col; c2d.fill();
+    });
+    c2d.beginPath(); c2d.arc(cx,cy,size*0.1,0,Math.PI*2);
+    c2d.fillStyle='#fff'; c2d.fill();
+  } else if(mat===CONCRETE){
+    const bw=size*0.42, bh=size*0.22, pad=size*0.04;
+    c2d.fillStyle=col+'33'; c2d.fillRect(x+pad,y+pad,size-pad*2,size-pad*2);
+    c2d.strokeStyle=col; c2d.lineWidth=size*0.07; c2d.lineJoin='miter';
+    c2d.strokeRect(x+pad, y+pad, bw, bh);
+    c2d.strokeRect(x+pad+bw+pad, y+pad, size-bw-pad*3, bh);
+    const off=bw*0.5;
+    c2d.strokeRect(x+pad-off*0.5, y+pad+bh+pad, bw*0.55, bh);
+    c2d.strokeRect(x+pad-off*0.5+bw*0.55+pad, y+pad+bh+pad, bw, bh);
+    c2d.strokeRect(x+pad, y+pad+(bh+pad)*2, bw, bh);
+    c2d.strokeRect(x+pad+bw+pad, y+pad+(bh+pad)*2, size-bw-pad*3, bh);
+  }
+  c2d.restore();
+}
+
+const legMap={[PIPE]:'ls-pipe',[CABLE]:'ls-cable',[REBAR]:'ls-rebar',[CONCRETE]:'ls-concrete'};
+MATS.forEach(mat=>{
+  const el=document.getElementById(legMap[mat]);
+  if(!el) return;
+  el.style.background=MAT_COLORS[mat]+'22';
+  el.style.border=`1.5px solid ${MAT_COLORS[mat]}66`;
+  const lc=document.createElement('canvas'); lc.width=14; lc.height=14;
+  drawMatIcon(lc.getContext('2d'),mat,0,0,14);
+  el.appendChild(lc);
+});
+
+const ovMats=document.getElementById('ov-mats-row');
+const matLabels={[PIPE]:'Pipe',[CABLE]:'Cable',[REBAR]:'Rebar',[CONCRETE]:'Concrete'};
+MATS.forEach(mat=>{
+  const div=document.createElement('div'); div.className='ov-mat';
+  const sw=document.createElement('div'); sw.className='ov-mat-swatch';
+  sw.style.background=MAT_COLORS[mat]+'22'; sw.style.border=`1.5px solid ${MAT_COLORS[mat]}`;
+  const sc=document.createElement('canvas'); sc.width=20; sc.height=20;
+  drawMatIcon(sc.getContext('2d'),mat,0,0,20);
+  sw.appendChild(sc);
+  const lbl=document.createElement('span'); lbl.textContent=matLabels[mat]; lbl.style.color=MAT_COLORS[mat];
+  div.appendChild(sw); div.appendChild(lbl);
+  ovMats.appendChild(div);
+});
+
+let highScore=parseInt(localStorage.getItem('neondig-highscore'))||0;
+function updateHiHUD(){
+  document.getElementById('hi-val').textContent=highScore>0?highScore.toLocaleString():'—';
+}
+updateHiHUD();
+
+let grid,player,zones,score,timeLeft,gameActive,carried,particles,timerInterval,animFrame;
+
+function initGame(){
+  score=0; timeLeft=60; gameActive=true; carried=null; particles=[];
+  document.getElementById('score-val').textContent='0';
+  document.getElementById('time-val').textContent='60';
+  document.getElementById('time-val').style.color='#ff4444';
+  setCarriedHUD(null);
+  grid=[];
+  for(let r=0;r<ROWS;r++){
+    grid[r]=[];
+    for(let c=0;c<COLS;c++){
+      if(r===0) grid[r][c]=EMPTY;
+      else{
+        const rng=Math.random();
+        if(rng<0.16) grid[r][c]=ROCK;
+        else if(rng<0.25) grid[r][c]=MATS[Math.floor(Math.random()*4)];
+        else grid[r][c]=DIRT;
+      }
+    }
+  }
+  zones=[];
+  const zPos=[2,7,12,17];
+  MATS.forEach((mat,i)=>{ const c=zPos[i]; grid[0][c]=ZONE; zones.push({col:c,mat}); });
+  player={col:Math.floor(COLS/2),row:0,dir:1};
+  clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    if(!gameActive) return;
+    timeLeft--;
+    const tv=document.getElementById('time-val');
+    tv.textContent=timeLeft;
+    tv.style.color=timeLeft<=10?'#ff2222':'#ff4444';
+    if(timeLeft<=0) endGame();
+  },1000);
+}
+
+function setCarriedHUD(mat){
+  const icon=document.getElementById('carried-icon');
+  const name=document.getElementById('carried-name');
+  icon.innerHTML='';
+  if(mat){
+    const cc=document.createElement('canvas'); cc.width=20; cc.height=20;
+    drawMatIcon(cc.getContext('2d'),mat,0,0,20);
+    icon.appendChild(cc);
+    name.textContent=matLabels[mat]; name.style.color=MAT_COLORS[mat];
+  } else {
+    icon.textContent='—'; name.textContent='';
+  }
+}
+
+function movePlayer(dc,dr){
+  if(!gameActive) return;
+  const nc=player.col+dc,nr=player.row+dr;
+  if(nc<0||nc>=COLS||nr<0||nr>=ROWS) return;
+  const cell=grid[nr][nc];
+  if(cell===ROCK){ spawnParticles(nc,nr,'#666',5); return; }
+  if(cell===DIRT){ grid[nr][nc]=EMPTY; spawnParticles(nc,nr,'#7a5c2e',7); }
+  else if(MATS.includes(cell)){
+    if(!carried){ carried=cell; grid[nr][nc]=EMPTY; spawnParticles(nc,nr,MAT_COLORS[cell],10); setCarriedHUD(cell); }
+    else return;
+  } else if(cell===ZONE){
+    const z=zones.find(z=>z.col===nc);
+    if(z&&carried===z.mat){
+      score+=100+(nr+1)*10;
+      document.getElementById('score-val').textContent=score;
+      carried=null; setCarriedHUD(null);
+      spawnParticles(nc,nr,MAT_COLORS[z.mat],20);
+      spawnParticles(nc,nr,'#e8a020',8);
+      spawnMaterial(z.mat);
+    } else if(z&&carried&&carried!==z.mat) return;
+  }
+  if(dc>0) player.dir=1;
+  if(dc<0) player.dir=-1;
+  player.col=nc; player.row=nr;
+}
+
+function spawnMaterial(mat){
+  for(let i=0;i<60;i++){
+    const r=3+Math.floor(Math.random()*(ROWS-4)),c=Math.floor(Math.random()*COLS);
+    if(grid[r][c]===DIRT){ grid[r][c]=mat; return; }
+  }
+}
+
+function spawnParticles(col,row,color,count){
+  for(let i=0;i<count;i++) particles.push({x:col*TS+TS/2,y:row*TS+TS/2,vx:(Math.random()-.5)*5,vy:(Math.random()-.5)*5,life:1,color});
+}
+
+function endGame(){
+  gameActive=false; clearInterval(timerInterval); cancelAnimationFrame(animFrame);
+  let isNewHi=false;
+  if(score>highScore){ highScore=score; isNewHi=true; localStorage.setItem('neondig-highscore',score); updateHiHUD(); }
+  const msg=score>=500?'Outstanding work on site! 🏆':score>=250?'Solid shift — keep building! 💪':'Keep digging, the crew needs you! 🚧';
+  const ov=document.getElementById('overlay');
+  ov.innerHTML=`
+    <div class="ov-logo">QUATTRO <span>CONSTRUCTORS</span></div>
+    <div class="ov-tagline">Partnering for Success</div>
+    <div class="ov-divider" style="width:200px;height:1px;background:linear-gradient(90deg,transparent,#e8a020,transparent);margin:8px 0 12px"></div>
+    <div style="font-size:0.9em;color:#888;letter-spacing:3px;text-transform:uppercase">Shift Complete</div>
+    <div class="final-score">${score.toLocaleString()}</div>
+    <div class="final-label">Points Scored</div>
+    ${isNewHi?'<div class="new-hi">🏆 NEW HIGH SCORE!</div>':'<div class="hi-row">Best: <span>'+(highScore>0?highScore.toLocaleString():'—')+'</span></div>'}
+    <div style="font-size:0.82em;color:#aaa;font-family:'Barlow',sans-serif">${msg}</div>
+    <button id="start-btn">ANOTHER SHIFT</button>
+    <div class="ov-footer">Vancouver, BC · quattroconstructors.com</div>`;
+  ov.style.display='flex';
+  document.getElementById('start-btn').addEventListener('click',startGame);
+}
+
+function startGame(){
+  document.getElementById('overlay').style.display='none';
+  initGame(); cancelAnimationFrame(animFrame); loop();
+}
+document.getElementById('start-btn').addEventListener('click',startGame);
+
+function loop(){
+  animFrame=requestAnimationFrame(loop);
+  particles=particles.filter(p=>p.life>0);
+  particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.life-=0.045;p.vx*=0.9;p.vy*=0.9;});
+  draw();
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const sky=ctx.createLinearGradient(0,0,0,TS);
+  sky.addColorStop(0,'#1a1200'); sky.addColorStop(1,'#0d0d0d');
+  ctx.fillStyle=sky; ctx.fillRect(0,0,canvas.width,TS);
+  const ug=ctx.createLinearGradient(0,TS,0,canvas.height);
+  ug.addColorStop(0,'#1a0f00'); ug.addColorStop(1,'#120800');
+  ctx.fillStyle=ug; ctx.fillRect(0,TS,canvas.width,canvas.height-TS);
+  ctx.strokeStyle='#e8a02033'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,TS); ctx.lineTo(canvas.width,TS); ctx.stroke();
+  ctx.strokeStyle='#ffffff06'; ctx.lineWidth=1;
+  for(let r=0;r<=ROWS;r++){ctx.beginPath();ctx.moveTo(0,r*TS);ctx.lineTo(canvas.width,r*TS);ctx.stroke();}
+  for(let c=0;c<=COLS;c++){ctx.beginPath();ctx.moveTo(c*TS,0);ctx.lineTo(c*TS,canvas.height);ctx.stroke();}
+
+  const t=Date.now();
+
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      const x=c*TS,y=r*TS,cell=grid[r][c];
+      if(cell===DIRT){
+        const d=r/ROWS;
+        ctx.fillStyle=`rgb(${Math.floor(50-d*15)},${Math.floor(35-d*10)},${Math.floor(18-d*5)})`;
+        ctx.fillRect(x,y,TS,TS);
+        ctx.fillStyle='#00000022'; ctx.fillRect(x,y,TS,2);
+      } else if(cell===ROCK){
+        ctx.fillStyle='#2a2a2a'; ctx.fillRect(x,y,TS,TS);
+        ctx.fillStyle='#3a3a3a'; ctx.fillRect(x+2,y+2,TS-4,TS-4);
+        ctx.fillStyle='#4a4a4a'; ctx.fillRect(x+8,y+10,6,5);
+        ctx.save(); ctx.globalAlpha=0.6;
+        ctx.font=`${TS-10}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillStyle='#aaa'; ctx.fillText('🪨',x+TS/2,y+TS/2+1);
+        ctx.restore();
+      } else if(MATS.includes(cell)){
+        const col=MAT_COLORS[cell];
+        const glow=0.5+0.5*Math.sin(t/400+c+r);
+        ctx.fillStyle=col+'18'; ctx.fillRect(x,y,TS,TS);
+        ctx.shadowBlur=10+glow*8; ctx.shadowColor=col;
+        ctx.strokeStyle=col; ctx.lineWidth=1.5;
+        ctx.strokeRect(x+1.5,y+1.5,TS-3,TS-3);
+        ctx.shadowBlur=0; ctx.lineWidth=1;
+        drawMatIcon(ctx,cell,x+2,y+2,TS-4);
+      } else if(cell===ZONE){
+        const z=zones.find(z=>z.col===c);
+        if(z){
+          const zc=MAT_COLORS[z.mat];
+          const pulse=0.4+0.6*Math.abs(Math.sin(t/350));
+          ctx.fillStyle=zc+Math.floor(pulse*50+15).toString(16).padStart(2,'0');
+          ctx.fillRect(x,y,TS,TS);
+          ctx.shadowBlur=10+pulse*8; ctx.shadowColor=zc;
+          ctx.strokeStyle=zc; ctx.lineWidth=2;
+          ctx.strokeRect(x+2,y+2,TS-4,TS-4);
+          ctx.shadowBlur=0; ctx.lineWidth=1;
+          drawMatIcon(ctx,z.mat,x+4,y+3,TS-10);
+          ctx.fillStyle=zc; ctx.font='bold 8px Barlow Condensed,monospace';
+          ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+          ctx.fillText('▼',x+TS/2,y+TS-1);
+        }
+      }
+    }
+  }
+
+  particles.forEach(p=>{
+    ctx.globalAlpha=Math.max(0,p.life);
+    ctx.fillStyle=p.color; ctx.shadowBlur=5; ctx.shadowColor=p.color;
+    ctx.fillRect(p.x-2,p.y-2,4,4);
+  });
+  ctx.globalAlpha=1; ctx.shadowBlur=0;
+
+  const px=player.col*TS,py=player.row*TS;
+  ctx.save();
+  ctx.translate(px+TS/2,py+TS/2);
+  ctx.scale(player.dir,1);
+  ctx.shadowBlur=16; ctx.shadowColor='#e8a020';
+  ctx.fillStyle='#e8a020'; ctx.fillRect(-13,-8,26,14);
+  ctx.fillStyle='#f0b840'; ctx.fillRect(-3,-16,13,10);
+  ctx.fillStyle='#1a1a2e'; ctx.fillRect(-1,-14,9,7);
+  ctx.fillStyle='#00ccff33'; ctx.fillRect(-1,-14,9,7);
+  ctx.fillStyle='#555'; ctx.fillRect(-14,5,28,6);
+  ctx.fillStyle='#e8a020';
+  for(let i=-12;i<14;i+=5) ctx.fillRect(i,5,3,6);
+  ctx.shadowColor='#fff'; ctx.shadowBlur=4;
+  ctx.fillStyle='#ccc'; ctx.fillRect(9,-5,11,3);
+  ctx.fillStyle='#e8a020'; ctx.shadowColor='#e8a020'; ctx.shadowBlur=8;
+  ctx.fillRect(19,-8,7,10);
+  ctx.fillStyle='#c07010'; ctx.fillRect(19,0,7,2);
+
+  if(carried){
+    ctx.shadowBlur=12; ctx.shadowColor=MAT_COLORS[carried];
+    ctx.strokeStyle=MAT_COLORS[carried]+'88'; ctx.lineWidth=1.5;
+    ctx.strokeRect(-10,-30,20,20);
+    ctx.fillStyle=MAT_COLORS[carried]+'22'; ctx.fillRect(-10,-30,20,20);
+    ctx.shadowBlur=0;
+    ctx.translate(-10,-30);
+    drawMatIcon(ctx,carried,0,0,20);
+  }
+  ctx.restore();
+}
+
+document.addEventListener('keydown',e=>{
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].includes(e.key)) e.preventDefault();
+  if(e.key==='ArrowUp'||e.key==='w') movePlayer(0,-1);
+  else if(e.key==='ArrowDown'||e.key==='s') movePlayer(0,1);
+  else if(e.key==='ArrowLeft'||e.key==='a') movePlayer(-1,0);
+  else if(e.key==='ArrowRight'||e.key==='d') movePlayer(1,0);
+});
+let tx=0,ty=0;
+canvas.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;e.preventDefault();},{passive:false});
+canvas.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)>Math.abs(dy)) movePlayer(dx>0?1:-1,0);
+  else movePlayer(0,dy>0?1:-1);
+  e.preventDefault();
+},{passive:false});
+</script>
+</body>
+</html>
