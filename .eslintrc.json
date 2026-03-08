@@ -1,0 +1,10 @@
+{
+  "extends": [
+    "next/core-web-vitals",
+    "next/typescript"
+  ],
+  "rules": {
+    "@next/next/no-page-custom-font": "off"
+  },
+  "ignorePatterns": ["next-env.d.ts", ".next/", "node_modules/"]
+}
